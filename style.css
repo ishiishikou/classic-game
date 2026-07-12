@@ -7,7 +7,10 @@
 
 * { box-sizing: border-box; }
 
-html, body { min-height: 100%; }
+html, body {
+  min-height: 100%;
+  overscroll-behavior: none;
+}
 
 body {
   margin: 0;
@@ -22,6 +25,15 @@ body {
 .game-shell {
   width: min(960px, 100%);
   text-align: center;
+  touch-action: none;
+}
+
+.game-shell,
+.game-shell * {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 header { margin-bottom: 12px; }
@@ -52,16 +64,16 @@ header p,
     0 0 0 4px #d4a45b,
     0 16px 40px rgb(0 0 0 / .45);
   touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
 }
 
 canvas {
   display: block;
   width: 100%;
   height: 100%;
+  touch-action: none;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+  -webkit-user-drag: none;
 }
 
 .overlay {
@@ -71,6 +83,7 @@ canvas {
   place-items: center;
   background: rgb(10 20 18 / .35);
   cursor: pointer;
+  touch-action: none;
 }
 
 .overlay.hidden { display: none; }
