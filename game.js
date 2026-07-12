@@ -3,6 +3,7 @@
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d', { alpha: false });
+  const frame = document.querySelector('.frame');
   const overlay = document.getElementById('startOverlay');
   const overlayMessage = overlay.querySelector('.panel span');
 
@@ -10,6 +11,8 @@
   const VIEW_H = 180;
   const WORLD_W = VIEW_W * 3;
   const GROUND_Y = 149;
+  const SWIPE_JUMP_DISTANCE = 24;
+  const SWIPE_VERTICAL_RATIO = 0.7;
 
   const FRAME_PATHS = [
     './assets/sprites/forest-runner/idle.png',
@@ -40,9 +43,10 @@
     cameraX: 0,
     pointerHeld: false,
     pointerDirection: 0,
-    lastTapTime: 0,
-    lastTapX: 0,
-    lastTapY: 0,
+    activePointerId: null,
+    pointerStartX: 0,
+    pointerStartY: 0,
+    swipeTriggered: false,
     keys: new Set(),
   };
 
@@ -185,8 +189,8 @@
   function drawPlayer() {
     if (!state.spriteReady) return;
 
-    const frame = currentPlayerFrame();
-    const frameImage = spriteFrames[frame];
+    const frameIndex = currentPlayerFrame();
+    const frameImage = spriteFrames[frameIndex];
     const x = Math.round(player.x - state.cameraX + (player.width - player.drawWidth) / 2);
     const y = Math.round(player.y + player.height - SPRITE_BASELINE);
 
@@ -280,6 +284,10 @@
     };
   }
 
+  function preventBrowserGesture(event) {
+    if (event.cancelable) event.preventDefault();
+  }
+
   function startGame() {
     if (state.started || !state.spriteReady || state.spriteFailed) return;
     state.started = true;
@@ -287,57 +295,69 @@
   }
 
   function onPointerDown(event) {
-    event.preventDefault();
+    preventBrowserGesture(event);
     startGame();
     if (!state.started) return;
+    if (state.activePointerId !== null) return;
 
-    if (event.currentTarget === canvas) {
-      try {
-        canvas.setPointerCapture?.(event.pointerId);
-      } catch {
-        // Pointer capture is optional and can fail on older mobile Safari versions.
-      }
-    }
+    state.activePointerId = event.pointerId;
+    state.pointerHeld = true;
+    state.swipeTriggered = false;
 
     const point = canvasPoint(event);
-    const now = performance.now();
-    const delta = now - state.lastTapTime;
-    const distance = Math.hypot(point.x - state.lastTapX, point.y - state.lastTapY);
-
-    if (delta > 0 && delta < 300 && distance < 56) {
-      jump();
-      state.lastTapTime = 0;
-    } else {
-      state.lastTapTime = now;
-      state.lastTapX = point.x;
-      state.lastTapY = point.y;
-    }
-
-    state.pointerHeld = true;
+    state.pointerStartX = point.x;
+    state.pointerStartY = point.y;
     state.pointerDirection = point.x < VIEW_W / 2 ? -1 : 1;
+
+    try {
+      frame.setPointerCapture?.(event.pointerId);
+    } catch {
+      // Pointer capture is optional and can fail on older mobile Safari versions.
+    }
   }
 
   function onPointerMove(event) {
-    if (!state.pointerHeld) return;
-    event.preventDefault();
+    if (!state.pointerHeld || event.pointerId !== state.activePointerId) return;
+    preventBrowserGesture(event);
+
     const point = canvasPoint(event);
+    const dx = point.x - state.pointerStartX;
+    const dy = point.y - state.pointerStartY;
     state.pointerDirection = point.x < VIEW_W / 2 ? -1 : 1;
+
+    const isUpwardSwipe =
+      dy <= -SWIPE_JUMP_DISTANCE &&
+      Math.abs(dy) >= Math.abs(dx) * SWIPE_VERTICAL_RATIO;
+
+    if (!state.swipeTriggered && isUpwardSwipe) {
+      jump();
+      state.swipeTriggered = true;
+    }
   }
 
   function onPointerUp(event) {
-    event.preventDefault();
+    if (state.activePointerId !== null && event.pointerId !== state.activePointerId) return;
+    preventBrowserGesture(event);
+
     state.pointerHeld = false;
     state.pointerDirection = 0;
+    state.activePointerId = null;
+    state.swipeTriggered = false;
   }
 
-  canvas.addEventListener('pointerdown', onPointerDown);
-  canvas.addEventListener('pointermove', onPointerMove);
-  canvas.addEventListener('pointerup', onPointerUp);
-  canvas.addEventListener('pointercancel', onPointerUp);
+  frame.addEventListener('pointerdown', onPointerDown);
+  frame.addEventListener('pointermove', onPointerMove);
+  frame.addEventListener('pointerup', onPointerUp);
+  frame.addEventListener('pointercancel', onPointerUp);
+  frame.addEventListener('lostpointercapture', onPointerUp);
+  frame.addEventListener('contextmenu', preventBrowserGesture);
+  frame.addEventListener('dblclick', preventBrowserGesture);
+  frame.addEventListener('gesturestart', preventBrowserGesture, { passive: false });
+  frame.addEventListener('gesturechange', preventBrowserGesture, { passive: false });
+  frame.addEventListener('gestureend', preventBrowserGesture, { passive: false });
+
   window.addEventListener('pointerup', onPointerUp);
   window.addEventListener('pointercancel', onPointerUp);
-  canvas.addEventListener('contextmenu', (event) => event.preventDefault());
-  overlay.addEventListener('pointerdown', onPointerDown);
 
   window.addEventListener('keydown', (event) => {
     if (['ArrowLeft', 'ArrowRight', ' ', 'ArrowUp', 'a', 'd'].includes(event.key)) {
@@ -352,6 +372,8 @@
   window.addEventListener('blur', () => {
     state.pointerHeld = false;
     state.pointerDirection = 0;
+    state.activePointerId = null;
+    state.swipeTriggered = false;
     state.keys.clear();
   });
 
