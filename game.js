@@ -11,11 +11,17 @@
   const WORLD_W = VIEW_W * 3;
   const GROUND_Y = 149;
 
-  const SPRITE_PATH = './assets/sprites/forest-runner-64.png';
-  const SPRITE_FRAME_W = 64;
-  const SPRITE_FRAME_H = 64;
-  const SPRITE_COLUMNS = 4;
-  const SPRITE_BASELINE = 58;
+  const FRAME_PATHS = [
+    './assets/sprites/forest-runner/idle.png',
+    './assets/sprites/forest-runner/run-1.png',
+    './assets/sprites/forest-runner/run-2.png',
+    './assets/sprites/forest-runner/run-3.png',
+    './assets/sprites/forest-runner/run-4.png',
+    './assets/sprites/forest-runner/jump-up.png',
+    './assets/sprites/forest-runner/jump-apex.png',
+    './assets/sprites/forest-runner/jump-down.png',
+  ];
+  const SPRITE_BASELINE = 87;
   const FRAMES = {
     idle: 0,
     run: [1, 2, 3, 4],
@@ -45,8 +51,8 @@
     y: GROUND_Y - 28,
     width: 34,
     height: 28,
-    drawWidth: 64,
-    drawHeight: 64,
+    drawWidth: 96,
+    drawHeight: 96,
     vx: 0,
     vy: 0,
     speed: 92,
@@ -59,23 +65,32 @@
     runFrame: 0,
   };
 
-  const spriteSheet = new Image();
-  spriteSheet.decoding = 'async';
   overlayMessage.textContent = '素材を読み込み中…';
 
-  spriteSheet.addEventListener('load', () => {
-    state.spriteReady = true;
-    overlayMessage.textContent = 'タップしてスタート';
-    render();
-  });
+  let loadedFrameCount = 0;
+  const spriteFrames = FRAME_PATHS.map((src) => {
+    const image = new Image();
+    image.decoding = 'async';
 
-  spriteSheet.addEventListener('error', () => {
-    state.spriteFailed = true;
-    overlayMessage.textContent = 'キャラクター画像を読み込めませんでした';
-    render();
-  });
+    image.addEventListener('load', () => {
+      loadedFrameCount += 1;
+      if (!state.spriteFailed && loadedFrameCount === FRAME_PATHS.length) {
+        state.spriteReady = true;
+        overlayMessage.textContent = 'タップしてスタート';
+        render();
+      }
+    });
 
-  spriteSheet.src = SPRITE_PATH;
+    image.addEventListener('error', () => {
+      if (state.spriteFailed) return;
+      state.spriteFailed = true;
+      overlayMessage.textContent = 'キャラクター画像を読み込めませんでした';
+      render();
+    });
+
+    image.src = src;
+    return image;
+  });
 
   function fill(x, y, w, h, color) {
     ctx.fillStyle = color;
@@ -171,8 +186,7 @@
     if (!state.spriteReady) return;
 
     const frame = currentPlayerFrame();
-    const sx = (frame % SPRITE_COLUMNS) * SPRITE_FRAME_W;
-    const sy = Math.floor(frame / SPRITE_COLUMNS) * SPRITE_FRAME_H;
+    const frameImage = spriteFrames[frame];
     const x = Math.round(player.x - state.cameraX + (player.width - player.drawWidth) / 2);
     const y = Math.round(player.y + player.height - SPRITE_BASELINE);
 
@@ -182,17 +196,9 @@
     if (player.facing < 0) {
       ctx.translate(x + player.drawWidth, y);
       ctx.scale(-1, 1);
-      ctx.drawImage(
-        spriteSheet,
-        sx, sy, SPRITE_FRAME_W, SPRITE_FRAME_H,
-        0, 0, player.drawWidth, player.drawHeight,
-      );
+      ctx.drawImage(frameImage, 0, 0, player.drawWidth, player.drawHeight);
     } else {
-      ctx.drawImage(
-        spriteSheet,
-        sx, sy, SPRITE_FRAME_W, SPRITE_FRAME_H,
-        x, y, player.drawWidth, player.drawHeight,
-      );
+      ctx.drawImage(frameImage, x, y, player.drawWidth, player.drawHeight);
     }
 
     ctx.restore();
