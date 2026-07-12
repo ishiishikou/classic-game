@@ -4,16 +4,32 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d', { alpha: false });
   const overlay = document.getElementById('startOverlay');
+  const overlayMessage = overlay.querySelector('.panel span');
 
   const VIEW_W = 320;
   const VIEW_H = 180;
   const WORLD_W = VIEW_W * 3;
   const GROUND_Y = 149;
 
+  const SPRITE_PATH = './assets/sprites/forest-runner-64.png';
+  const SPRITE_FRAME_W = 64;
+  const SPRITE_FRAME_H = 64;
+  const SPRITE_COLUMNS = 4;
+  const SPRITE_BASELINE = 58;
+  const FRAMES = {
+    idle: 0,
+    run: [1, 2, 3, 4],
+    jumpUp: 5,
+    jumpApex: 6,
+    jumpDown: 7,
+  };
+
   ctx.imageSmoothingEnabled = false;
 
   const state = {
     started: false,
+    spriteReady: false,
+    spriteFailed: false,
     lastTime: 0,
     cameraX: 0,
     pointerHeld: false,
@@ -27,125 +43,39 @@
   const player = {
     x: 56,
     y: GROUND_Y - 28,
-    width: 48,
+    width: 34,
     height: 28,
+    drawWidth: 64,
+    drawHeight: 64,
     vx: 0,
     vy: 0,
     speed: 92,
     jumpPower: 214,
     gravity: 590,
     grounded: true,
+    landingClock: 0,
     facing: 1,
     frameClock: 0,
     runFrame: 0,
   };
 
-  const P = {
-    outline: '#4a241c',
-    dark: '#713622',
-    cream: '#fff0c7',
-    shade: '#e7bc83',
-    peach: '#ef8b58',
-    peachDark: '#c95d3f',
-    eye: '#2d1a18',
-    white: '#fff9df',
-    green: '#4d6d2c',
-    greenLight: '#7f9b39',
-    gold: '#e4af3b',
-  };
+  const spriteSheet = new Image();
+  spriteSheet.decoding = 'async';
+  overlayMessage.textContent = '素材を読み込み中…';
 
-  function rect(g, color, x, y, w, h) {
-    g.fillStyle = color;
-    g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
-  }
+  spriteSheet.addEventListener('load', () => {
+    state.spriteReady = true;
+    overlayMessage.textContent = 'タップしてスタート';
+    render();
+  });
 
-  function makeRunner(frame) {
-    const s = document.createElement('canvas');
-    s.width = 48;
-    s.height = 32;
-    const g = s.getContext('2d');
-    g.imageSmoothingEnabled = false;
+  spriteSheet.addEventListener('error', () => {
+    state.spriteFailed = true;
+    overlayMessage.textContent = 'キャラクター画像を読み込めませんでした';
+    render();
+  });
 
-    // Raised fluffy tail behind the body.
-    rect(g, P.outline, 31, 8, 10, 2);
-    rect(g, P.outline, 38, 6, 5, 3);
-    rect(g, P.outline, 42, 8, 4, 4);
-    rect(g, P.outline, 44, 11, 3, 10);
-    rect(g, P.outline, 40, 20, 5, 4);
-    rect(g, P.outline, 33, 22, 8, 3);
-    rect(g, P.peach, 32, 9, 9, 3);
-    rect(g, P.peach, 39, 8, 4, 5);
-    rect(g, P.peach, 41, 11, 4, 8);
-    rect(g, P.cream, 33, 12, 8, 9);
-    rect(g, P.shade, 35, 20, 7, 2);
-    rect(g, P.peachDark, 42, 12, 3, 5);
-
-    // Long, low running body.
-    rect(g, P.outline, 13, 13, 22, 13);
-    rect(g, P.outline, 17, 11, 13, 3);
-    rect(g, P.cream, 14, 14, 20, 10);
-    rect(g, P.shade, 18, 22, 15, 3);
-    rect(g, P.white, 21, 14, 10, 3);
-    rect(g, P.white, 24, 17, 8, 3);
-
-    // Scarf and trailing leaf ribbon.
-    rect(g, P.outline, 16, 11, 17, 4);
-    rect(g, P.green, 17, 12, 15, 2);
-    rect(g, P.greenLight, 28, 10, 6, 2);
-    rect(g, P.green, 31, 12, 6, 2);
-    rect(g, P.gold, 16, 15, 2, 2);
-    rect(g, P.greenLight, 16, 17, 3, 4);
-    rect(g, P.green, 17, 19, 2, 3);
-
-    // Side-view head and muzzle.
-    rect(g, P.outline, 4, 9, 14, 14);
-    rect(g, P.outline, 6, 6, 11, 4);
-    rect(g, P.cream, 5, 10, 12, 11);
-    rect(g, P.cream, 7, 7, 9, 6);
-    rect(g, P.white, 3, 15, 8, 6);
-    rect(g, P.peach, 5, 18, 6, 3);
-
-    // Oversized upright ears.
-    rect(g, P.outline, 6, 1, 5, 9);
-    rect(g, P.outline, 8, 0, 4, 5);
-    rect(g, P.outline, 12, 2, 5, 8);
-    rect(g, P.outline, 14, 0, 4, 7);
-    rect(g, P.peach, 7, 2, 3, 7);
-    rect(g, P.cream, 8, 3, 2, 5);
-    rect(g, P.peach, 13, 3, 3, 7);
-    rect(g, P.cream, 14, 3, 2, 5);
-
-    // Face and forehead curl.
-    rect(g, P.eye, 5, 11, 4, 5);
-    rect(g, P.white, 6, 11, 1, 1);
-    rect(g, P.dark, 9, 17, 2, 2);
-    rect(g, P.eye, 11, 14, 2, 2);
-    rect(g, P.peachDark, 4, 17, 2, 2);
-    rect(g, P.peach, 13, 18, 3, 2);
-    rect(g, P.outline, 10, 5, 4, 2);
-    rect(g, P.cream, 10, 6, 3, 2);
-
-    // Two clear running poses.
-    if (frame === 0) {
-      rect(g, P.outline, 12, 23, 10, 4);
-      rect(g, P.cream, 14, 23, 6, 3);
-      rect(g, P.peachDark, 10, 26, 10, 2);
-      rect(g, P.outline, 27, 23, 9, 4);
-      rect(g, P.cream, 28, 23, 7, 3);
-      rect(g, P.peachDark, 34, 26, 8, 2);
-    } else {
-      rect(g, P.outline, 15, 23, 8, 5);
-      rect(g, P.cream, 16, 23, 6, 3);
-      rect(g, P.peachDark, 18, 27, 8, 2);
-      rect(g, P.outline, 27, 23, 7, 5);
-      rect(g, P.cream, 28, 23, 5, 3);
-      rect(g, P.peachDark, 24, 27, 8, 2);
-    }
-
-    return s;
-  }
-
-  const runnerFrames = [makeRunner(0), makeRunner(1)];
+  spriteSheet.src = SPRITE_PATH;
 
   function fill(x, y, w, h, color) {
     ctx.fillStyle = color;
@@ -225,21 +155,46 @@
     });
   }
 
+  function currentPlayerFrame() {
+    if (!player.grounded) {
+      if (player.vy < -45) return FRAMES.jumpUp;
+      if (player.vy <= 45) return FRAMES.jumpApex;
+      return FRAMES.jumpDown;
+    }
+
+    if (player.landingClock > 0) return FRAMES.jumpDown;
+    if (Math.abs(player.vx) > 1) return FRAMES.run[player.runFrame];
+    return FRAMES.idle;
+  }
+
   function drawPlayer() {
-    const moving = Math.abs(player.vx) > 1 && player.grounded;
-    const frame = moving ? player.runFrame : 0;
-    const bob = moving && frame === 1 ? 1 : 0;
-    const x = Math.round(player.x - state.cameraX);
-    const y = Math.round(player.y + bob);
+    if (!state.spriteReady) return;
+
+    const frame = currentPlayerFrame();
+    const sx = (frame % SPRITE_COLUMNS) * SPRITE_FRAME_W;
+    const sy = Math.floor(frame / SPRITE_COLUMNS) * SPRITE_FRAME_H;
+    const x = Math.round(player.x - state.cameraX + (player.width - player.drawWidth) / 2);
+    const y = Math.round(player.y + player.height - SPRITE_BASELINE);
 
     ctx.save();
+    ctx.imageSmoothingEnabled = false;
+
     if (player.facing < 0) {
-      ctx.translate(x + player.width, 0);
+      ctx.translate(x + player.drawWidth, y);
       ctx.scale(-1, 1);
-      ctx.drawImage(runnerFrames[frame], 0, y);
+      ctx.drawImage(
+        spriteSheet,
+        sx, sy, SPRITE_FRAME_W, SPRITE_FRAME_H,
+        0, 0, player.drawWidth, player.drawHeight,
+      );
     } else {
-      ctx.drawImage(runnerFrames[frame], x, y);
+      ctx.drawImage(
+        spriteSheet,
+        sx, sy, SPRITE_FRAME_W, SPRITE_FRAME_H,
+        x, y, player.drawWidth, player.drawHeight,
+      );
     }
+
     ctx.restore();
   }
 
@@ -264,6 +219,7 @@
     player.vx = direction * player.speed;
     if (direction !== 0) player.facing = direction;
 
+    const wasGrounded = player.grounded;
     player.vy += player.gravity * dt;
     player.x += player.vx * dt;
     player.y += player.vy * dt;
@@ -274,19 +230,22 @@
       player.y = floorY;
       player.vy = 0;
       player.grounded = true;
+      if (!wasGrounded) player.landingClock = 0.08;
     } else {
       player.grounded = false;
     }
 
-    if (Math.abs(player.vx) > 1 && player.grounded) {
+    player.landingClock = Math.max(0, player.landingClock - dt);
+
+    if (Math.abs(player.vx) > 1 && player.grounded && player.landingClock === 0) {
       player.frameClock += dt;
-      if (player.frameClock >= 0.11) {
-        player.frameClock = 0;
-        player.runFrame = (player.runFrame + 1) % 2;
+      if (player.frameClock >= 0.1) {
+        player.frameClock %= 0.1;
+        player.runFrame = (player.runFrame + 1) % FRAMES.run.length;
       }
     } else {
       player.frameClock = 0;
-      player.runFrame = 0;
+      if (Math.abs(player.vx) <= 1) player.runFrame = 0;
     }
 
     const target = player.x - VIEW_W * 0.38;
@@ -304,6 +263,7 @@
     if (!state.started || !player.grounded) return;
     player.vy = -player.jumpPower;
     player.grounded = false;
+    player.landingClock = 0;
   }
 
   function canvasPoint(event) {
@@ -315,7 +275,7 @@
   }
 
   function startGame() {
-    if (state.started) return;
+    if (state.started || !state.spriteReady || state.spriteFailed) return;
     state.started = true;
     overlay.classList.add('hidden');
   }
@@ -323,7 +283,16 @@
   function onPointerDown(event) {
     event.preventDefault();
     startGame();
-    canvas.setPointerCapture?.(event.pointerId);
+    if (!state.started) return;
+
+    if (event.currentTarget === canvas) {
+      try {
+        canvas.setPointerCapture?.(event.pointerId);
+      } catch {
+        // Pointer capture is optional and can fail on older mobile Safari versions.
+      }
+    }
+
     const point = canvasPoint(event);
     const now = performance.now();
     const delta = now - state.lastTapTime;
@@ -359,6 +328,8 @@
   canvas.addEventListener('pointermove', onPointerMove);
   canvas.addEventListener('pointerup', onPointerUp);
   canvas.addEventListener('pointercancel', onPointerUp);
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerUp);
   canvas.addEventListener('contextmenu', (event) => event.preventDefault());
   overlay.addEventListener('pointerdown', onPointerDown);
 
@@ -374,6 +345,7 @@
   window.addEventListener('keyup', (event) => state.keys.delete(event.key));
   window.addEventListener('blur', () => {
     state.pointerHeld = false;
+    state.pointerDirection = 0;
     state.keys.clear();
   });
 
