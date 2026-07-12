@@ -11,11 +11,11 @@
   const WORLD_W = VIEW_W * 3;
   const GROUND_Y = 149;
 
-  const SPRITE_PATH = './assets/sprites/forest-runner-64.png';
-  const SPRITE_FRAME_W = 64;
-  const SPRITE_FRAME_H = 64;
+  const SPRITE_PATH = './assets/sprites/forest-runner-96.png';
+  const SPRITE_FRAME_W = 96;
+  const SPRITE_FRAME_H = 96;
   const SPRITE_COLUMNS = 4;
-  const SPRITE_BASELINE = 58;
+  const SPRITE_BASELINE = 87;
   const FRAMES = {
     idle: 0,
     run: [1, 2, 3, 4],
@@ -45,8 +45,8 @@
     y: GROUND_Y - 28,
     width: 34,
     height: 28,
-    drawWidth: 64,
-    drawHeight: 64,
+    drawWidth: 96,
+    drawHeight: 96,
     vx: 0,
     vy: 0,
     speed: 92,
