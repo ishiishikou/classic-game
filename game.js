@@ -8,7 +8,7 @@
   const VIEW_W = 320;
   const VIEW_H = 180;
   const WORLD_W = VIEW_W * 3;
-  const GROUND_Y = 145;
+  const GROUND_Y = 149;
 
   ctx.imageSmoothingEnabled = false;
 
@@ -25,271 +25,238 @@
   };
 
   const player = {
-    x: 80,
-    y: GROUND_Y - 30,
-    width: 28,
-    height: 30,
+    x: 56,
+    y: GROUND_Y - 28,
+    width: 48,
+    height: 28,
     vx: 0,
     vy: 0,
-    speed: 82,
-    jumpPower: 205,
-    gravity: 560,
+    speed: 92,
+    jumpPower: 214,
+    gravity: 590,
     grounded: true,
     facing: 1,
     frameClock: 0,
     runFrame: 0,
   };
 
-  const spriteCanvas = document.createElement('canvas');
-  spriteCanvas.width = 32;
-  spriteCanvas.height = 32;
-  const sctx = spriteCanvas.getContext('2d');
-  sctx.imageSmoothingEnabled = false;
-
-  const C = {
-    outline: '#4f2d22',
-    dark: '#8b4b32',
-    peach: '#e9874c',
-    peach2: '#f2ad68',
-    cream: '#ffe4ae',
-    light: '#fff2ca',
-    eye: '#6b331f',
-    eyeGlow: '#d7823f',
-    green: '#557c31',
-    green2: '#88a844',
-    gold: '#e8bd4f',
+  const P = {
+    outline: '#4a241c',
+    dark: '#713622',
+    cream: '#fff0c7',
+    shade: '#e7bc83',
+    peach: '#ef8b58',
+    peachDark: '#c95d3f',
+    eye: '#2d1a18',
+    white: '#fff9df',
+    green: '#4d6d2c',
+    greenLight: '#7f9b39',
+    gold: '#e4af3b',
   };
 
-  function px(c, x, y, w = 1, h = 1) {
-    sctx.fillStyle = c;
-    sctx.fillRect(x, y, w, h);
+  function rect(g, color, x, y, w, h) {
+    g.fillStyle = color;
+    g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
   }
 
-  function drawForestSpirit(frame, moving, facing) {
-    sctx.clearRect(0, 0, 32, 32);
+  function makeRunner(frame) {
+    const s = document.createElement('canvas');
+    s.width = 48;
+    s.height = 32;
+    const g = s.getContext('2d');
+    g.imageSmoothingEnabled = false;
 
-    const bob = moving ? (frame % 2) : 0;
-    const legShift = moving ? (frame % 2 === 0 ? -1 : 1) : 0;
-    const tailShift = moving ? (frame % 2) : 0;
+    // Raised fluffy tail behind the body.
+    rect(g, P.outline, 31, 8, 10, 2);
+    rect(g, P.outline, 38, 6, 5, 3);
+    rect(g, P.outline, 42, 8, 4, 4);
+    rect(g, P.outline, 44, 11, 3, 10);
+    rect(g, P.outline, 40, 20, 5, 4);
+    rect(g, P.outline, 33, 22, 8, 3);
+    rect(g, P.peach, 32, 9, 9, 3);
+    rect(g, P.peach, 39, 8, 4, 5);
+    rect(g, P.peach, 41, 11, 4, 8);
+    rect(g, P.cream, 33, 12, 8, 9);
+    rect(g, P.shade, 35, 20, 7, 2);
+    rect(g, P.peachDark, 42, 12, 3, 5);
 
-    sctx.save();
-    if (facing < 0) {
-      sctx.translate(32, 0);
-      sctx.scale(-1, 1);
+    // Long, low running body.
+    rect(g, P.outline, 13, 13, 22, 13);
+    rect(g, P.outline, 17, 11, 13, 3);
+    rect(g, P.cream, 14, 14, 20, 10);
+    rect(g, P.shade, 18, 22, 15, 3);
+    rect(g, P.white, 21, 14, 10, 3);
+    rect(g, P.white, 24, 17, 8, 3);
+
+    // Scarf and trailing leaf ribbon.
+    rect(g, P.outline, 16, 11, 17, 4);
+    rect(g, P.green, 17, 12, 15, 2);
+    rect(g, P.greenLight, 28, 10, 6, 2);
+    rect(g, P.green, 31, 12, 6, 2);
+    rect(g, P.gold, 16, 15, 2, 2);
+    rect(g, P.greenLight, 16, 17, 3, 4);
+    rect(g, P.green, 17, 19, 2, 3);
+
+    // Side-view head and muzzle.
+    rect(g, P.outline, 4, 9, 14, 14);
+    rect(g, P.outline, 6, 6, 11, 4);
+    rect(g, P.cream, 5, 10, 12, 11);
+    rect(g, P.cream, 7, 7, 9, 6);
+    rect(g, P.white, 3, 15, 8, 6);
+    rect(g, P.peach, 5, 18, 6, 3);
+
+    // Oversized upright ears.
+    rect(g, P.outline, 6, 1, 5, 9);
+    rect(g, P.outline, 8, 0, 4, 5);
+    rect(g, P.outline, 12, 2, 5, 8);
+    rect(g, P.outline, 14, 0, 4, 7);
+    rect(g, P.peach, 7, 2, 3, 7);
+    rect(g, P.cream, 8, 3, 2, 5);
+    rect(g, P.peach, 13, 3, 3, 7);
+    rect(g, P.cream, 14, 3, 2, 5);
+
+    // Face and forehead curl.
+    rect(g, P.eye, 5, 11, 4, 5);
+    rect(g, P.white, 6, 11, 1, 1);
+    rect(g, P.dark, 9, 17, 2, 2);
+    rect(g, P.eye, 11, 14, 2, 2);
+    rect(g, P.peachDark, 4, 17, 2, 2);
+    rect(g, P.peach, 13, 18, 3, 2);
+    rect(g, P.outline, 10, 5, 4, 2);
+    rect(g, P.cream, 10, 6, 3, 2);
+
+    // Two clear running poses.
+    if (frame === 0) {
+      rect(g, P.outline, 12, 23, 10, 4);
+      rect(g, P.cream, 14, 23, 6, 3);
+      rect(g, P.peachDark, 10, 26, 10, 2);
+      rect(g, P.outline, 27, 23, 9, 4);
+      rect(g, P.cream, 28, 23, 7, 3);
+      rect(g, P.peachDark, 34, 26, 8, 2);
+    } else {
+      rect(g, P.outline, 15, 23, 8, 5);
+      rect(g, P.cream, 16, 23, 6, 3);
+      rect(g, P.peachDark, 18, 27, 8, 2);
+      rect(g, P.outline, 27, 23, 7, 5);
+      rect(g, P.cream, 28, 23, 5, 3);
+      rect(g, P.peachDark, 24, 27, 8, 2);
     }
 
-    px(C.outline, 22, 15 + tailShift, 6, 10);
-    px(C.outline, 25, 13 + tailShift, 4, 9);
-    px(C.peach, 23, 16 + tailShift, 4, 7);
-    px(C.peach2, 26, 14 + tailShift, 2, 6);
-    px(C.cream, 23, 20 + tailShift, 3, 4);
-
-    px(C.outline, 7, 2 + bob, 5, 10);
-    px(C.outline, 19, 1 + bob, 5, 11);
-    px(C.peach, 8, 3 + bob, 3, 8);
-    px(C.peach, 20, 2 + bob, 3, 9);
-    px(C.cream, 9, 5 + bob, 2, 5);
-    px(C.cream, 20, 5 + bob, 2, 5);
-
-    px(C.outline, 7, 9 + bob, 17, 11);
-    px(C.outline, 5, 13 + bob, 3, 5);
-    px(C.outline, 23, 13 + bob, 3, 5);
-    px(C.cream, 8, 10 + bob, 15, 9);
-    px(C.cream, 6, 14 + bob, 3, 3);
-    px(C.cream, 23, 14 + bob, 2, 3);
-    px(C.light, 10, 10 + bob, 10, 3);
-
-    px(C.outline, 14, 7 + bob, 4, 3);
-    px(C.cream, 14, 7 + bob, 3, 2);
-    px(C.cream, 13, 8 + bob, 2, 2);
-
-    px(C.peach, 7, 15 + bob, 4, 2);
-    px(C.peach, 20, 15 + bob, 4, 2);
-    px(C.outline, 10, 13 + bob, 4, 5);
-    px(C.outline, 18, 13 + bob, 4, 5);
-    px(C.eye, 11, 14 + bob, 2, 3);
-    px(C.eye, 19, 14 + bob, 2, 3);
-    px(C.light, 11, 14 + bob, 1, 1);
-    px(C.light, 19, 14 + bob, 1, 1);
-    px(C.eyeGlow, 12, 16 + bob, 1, 1);
-    px(C.eyeGlow, 20, 16 + bob, 1, 1);
-    px(C.dark, 15, 17 + bob, 2, 1);
-    px(C.outline, 15, 18 + bob, 2, 1);
-    px(C.peach, 15, 19 + bob, 2, 1);
-
-    px(C.outline, 9, 19 + bob, 14, 9);
-    px(C.cream, 10, 19 + bob, 12, 8);
-    px(C.light, 13, 20 + bob, 6, 5);
-
-    px(C.outline, 9, 19 + bob, 14, 3);
-    px(C.green, 10, 19 + bob, 12, 2);
-    px(C.green2, 12, 19 + bob, 4, 1);
-    px(C.green, 21, 20 + bob, 4, 2);
-    px(C.gold, 15, 21 + bob, 3, 2);
-    px(C.green2, 15, 23 + bob, 3, 4);
-    px(C.gold, 16, 24 + bob, 1, 2);
-
-    px(C.outline, 8, 21 + bob, 4, 5);
-    px(C.outline, 21, 21 + bob, 4, 5);
-    px(C.cream, 9, 22 + bob, 3, 3);
-    px(C.cream, 21, 22 + bob, 3, 3);
-    px(C.peach, 9, 24 + bob, 2, 1);
-    px(C.peach, 22, 24 + bob, 2, 1);
-
-    px(C.outline, 10 + legShift, 27 + bob, 5, 3);
-    px(C.outline, 18 - legShift, 27 + bob, 5, 3);
-    px(C.peach, 11 + legShift, 27 + bob, 3, 2);
-    px(C.peach, 19 - legShift, 27 + bob, 3, 2);
-
-    sctx.restore();
+    return s;
   }
 
-  function rect(x, y, w, h, color) {
+  const runnerFrames = [makeRunner(0), makeRunner(1)];
+
+  function fill(x, y, w, h, color) {
     ctx.fillStyle = color;
     ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
   }
 
-  function circle(x, y, r, color) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(Math.round(x), Math.round(y), r, 0, Math.PI * 2);
-    ctx.fill();
+  function cloud(worldX, y, parallax) {
+    const x = worldX - state.cameraX * parallax;
+    if (x < -45 || x > VIEW_W + 45) return;
+    fill(x, y + 5, 34, 8, '#fff1ca');
+    fill(x + 7, y, 20, 13, '#fff1ca');
   }
 
-  function drawSky(cameraX) {
-    const t = cameraX / (WORLD_W - VIEW_W);
-    const top = t < 0.5 ? '#72c7db' : '#e49a75';
-    const bottom = t < 0.5 ? '#d9f0c0' : '#f4cf88';
-
-    const gradient = ctx.createLinearGradient(0, 0, 0, VIEW_H);
-    gradient.addColorStop(0, top);
-    gradient.addColorStop(1, bottom);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-
-    const glowX = 265 - cameraX * 0.08;
-    circle(glowX, 34, 18, t > 0.55 ? '#ffe19b' : '#fff0b6');
+  function hill(worldX, y, width, height, color, parallax) {
+    const x = worldX - state.cameraX * parallax;
+    fill(x, y, width, height, color);
+    fill(x + 10, y - 8, width - 20, 8, color);
+    fill(x + 24, y - 15, width - 48, 7, color);
   }
 
-  function drawClouds(cameraX) {
-    const offsets = [40, 180, 360, 610, 820];
-    for (const worldX of offsets) {
-      const x = worldX - cameraX * 0.22;
-      if (x < -40 || x > VIEW_W + 40) continue;
-      circle(x, 28, 9, '#f4f1d0');
-      circle(x + 10, 24, 12, '#f4f1d0');
-      circle(x + 23, 29, 8, '#f4f1d0');
-      rect(x - 5, 29, 34, 8, '#f4f1d0');
-    }
+  function tree(worldX, scale, trunk, leaves) {
+    const x = worldX - state.cameraX * 0.76;
+    if (x < -45 || x > VIEW_W + 45) return;
+    fill(x, GROUND_Y - 41 * scale, 6 * scale, 41 * scale, trunk);
+    fill(x - 15 * scale, GROUND_Y - 58 * scale, 36 * scale, 17 * scale, leaves);
+    fill(x - 9 * scale, GROUND_Y - 68 * scale, 24 * scale, 13 * scale, leaves);
+    fill(x - 2 * scale, GROUND_Y - 75 * scale, 12 * scale, 9 * scale, leaves);
   }
 
-  function drawBackHills(cameraX) {
-    const colors = ['#4d9a70', '#477e5f', '#8c6b55'];
-    for (let screen = 0; screen < 3; screen++) {
-      const baseX = screen * VIEW_W - cameraX * 0.45;
-      const color = colors[screen];
-      for (let i = -1; i < 6; i++) {
-        const x = baseX + i * 72;
-        circle(x, 110, 52, color);
-        circle(x + 34, 102, 44, color);
-      }
-    }
-  }
+  function drawBackground() {
+    const progress = state.cameraX / (WORLD_W - VIEW_W);
+    const sky = progress < 0.5 ? '#77cedf' : '#e39a79';
+    const far = progress < 0.5 ? '#5ca475' : '#887358';
+    const near = progress < 0.5 ? '#397657' : '#65505a';
 
-  function drawTree(x, baseY, scale, trunk, leaves) {
-    rect(x - 3 * scale, baseY - 26 * scale, 6 * scale, 26 * scale, trunk);
-    circle(x, baseY - 36 * scale, 15 * scale, leaves);
-    circle(x - 12 * scale, baseY - 29 * scale, 12 * scale, leaves);
-    circle(x + 12 * scale, baseY - 29 * scale, 12 * scale, leaves);
-    rect(x - 16 * scale, baseY - 31 * scale, 32 * scale, 11 * scale, leaves);
-  }
+    fill(0, 0, VIEW_W, VIEW_H, sky);
 
-  function drawMidground(cameraX) {
+    const sunX = 267 - state.cameraX * 0.08;
+    fill(sunX, 18, 26, 25, '#fff0a4');
+    fill(sunX - 3, 24, 32, 13, '#fff0a4');
+
+    [42, 188, 380, 612, 820].forEach((x, i) => cloud(x, 23 + (i % 2) * 7, 0.2));
+    for (let i = -1; i < 8; i += 1) hill(i * 145, 83 + (i % 2) * 8, 132, 49, far, 0.28);
+    for (let i = -1; i < 7; i += 1) hill(i * 172, 108 + (i % 3) * 5, 154, 34, near, 0.5);
+
     const trees = [
-      { x: 55, s: 1.2, trunk: '#745033', leaves: '#2f7647' },
-      { x: 145, s: .9, trunk: '#745033', leaves: '#3e8a50' },
-      { x: 270, s: 1.1, trunk: '#745033', leaves: '#347849' },
-      { x: 380, s: 1.0, trunk: '#7f5636', leaves: '#5a9a4d' },
-      { x: 510, s: 1.25, trunk: '#7b5435', leaves: '#709448' },
-      { x: 625, s: .9, trunk: '#6f4937', leaves: '#98794b' },
-      { x: 730, s: 1.2, trunk: '#694335', leaves: '#a76c45' },
-      { x: 885, s: 1.0, trunk: '#5d3c34', leaves: '#784b45' },
+      [55, 1.05, '#70472f', '#2d6d49'], [168, 0.8, '#70472f', '#3f8557'],
+      [286, 1.1, '#70472f', '#347a4d'], [390, 0.85, '#7c5234', '#6e9b52'],
+      [515, 1.12, '#745039', '#8e8a4b'], [640, 0.85, '#6d4937', '#a37347'],
+      [748, 1.08, '#684237', '#925344'], [885, 0.92, '#5d3c34', '#704454'],
     ];
+    trees.forEach((t) => tree(...t));
 
-    for (const tree of trees) {
-      const x = tree.x - cameraX * 0.72;
-      if (x < -45 || x > VIEW_W + 45) continue;
-      drawTree(x, GROUND_Y + 3, tree.s, tree.trunk, tree.leaves);
-    }
-  }
+    fill(0, GROUND_Y - 7, VIEW_W, 7, '#c5d866');
+    fill(0, GROUND_Y, VIEW_W, VIEW_H - GROUND_Y, '#9b7248');
+    fill(0, GROUND_Y + 5, VIEW_W, 4, '#79563a');
 
-  function drawGround(cameraX) {
-    rect(0, GROUND_Y, VIEW_W, VIEW_H - GROUND_Y, '#6f8f3f');
-    rect(0, GROUND_Y, VIEW_W, 5, '#b9d76b');
-    rect(0, GROUND_Y + 5, VIEW_W, 4, '#426c38');
-    rect(0, GROUND_Y + 9, VIEW_W, VIEW_H - GROUND_Y - 9, '#8a6840');
-
-    const tile = 16;
-    const offset = -Math.floor(cameraX) % tile;
-    for (let x = offset - tile; x < VIEW_W + tile; x += tile) {
-      rect(x, GROUND_Y + 11, 6, 3, '#aa8650');
-      rect(x + 8, GROUND_Y + 23, 5, 3, '#6e4c31');
-      rect(x + 3, GROUND_Y + 31, 3, 2, '#c39a58');
+    const offset = -Math.floor(state.cameraX) % 24;
+    for (let x = offset - 24; x < VIEW_W + 24; x += 24) {
+      fill(x, GROUND_Y + 11, 8, 4, '#c79b5c');
+      fill(x + 11, GROUND_Y + 24, 7, 4, '#6f4d35');
     }
 
-    const flowers = [80, 210, 348, 430, 565, 690, 785, 920];
-    for (const wx of flowers) {
-      const x = wx - cameraX;
-      if (x < -8 || x > VIEW_W + 8) continue;
-      rect(x, GROUND_Y - 8, 2, 8, '#3d7437');
-      rect(x - 2, GROUND_Y - 10, 2, 2, wx < 600 ? '#f3d66e' : '#f0a06a');
-      rect(x + 2, GROUND_Y - 10, 2, 2, wx < 600 ? '#f3d66e' : '#f0a06a');
-      rect(x, GROUND_Y - 12, 2, 2, '#fff1b0');
-    }
+    [102, 224, 350, 435, 560, 688, 817, 925].forEach((wx, i) => {
+      const x = wx - state.cameraX;
+      if (x < -8 || x > VIEW_W + 8) return;
+      fill(x, GROUND_Y - 14, 2, 14, '#477949');
+      fill(x - 2, GROUND_Y - 17, 6, 5, i % 2 ? '#ff9c86' : '#ffe47a');
+      fill(x, GROUND_Y - 16, 2, 2, '#fff5b5');
+    });
 
-    const stones = [300, 603, 842];
-    for (const wx of stones) {
-      const x = wx - cameraX;
-      if (x < -20 || x > VIEW_W + 20) continue;
-      rect(x, GROUND_Y - 7, 14, 7, '#5e6554');
-      rect(x + 3, GROUND_Y - 10, 8, 3, '#81856d');
-      rect(x + 2, GROUND_Y - 6, 4, 2, '#a5a88a');
-    }
-  }
-
-  function drawZoneLabel(cameraX) {
-    const zone = Math.min(2, Math.floor((cameraX + VIEW_W * 0.45) / VIEW_W));
-    const labels = ['MORNING WOODS', 'SUNLIT MEADOW', 'TWILIGHT GROVE'];
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(30, 42, 32, .65)';
-    ctx.fillRect(98, 8, 124, 14);
-    ctx.fillStyle = '#fff0bd';
-    ctx.fillText(labels[zone], VIEW_W / 2, 18);
+    [320, 640].forEach((wx) => {
+      const x = wx - state.cameraX;
+      if (x < -14 || x > VIEW_W + 14) return;
+      fill(x - 2, GROUND_Y - 31, 4, 31, '#553b2c');
+      fill(x - 9, GROUND_Y - 34, 18, 4, '#d4b65a');
+    });
   }
 
   function drawPlayer() {
     const moving = Math.abs(player.vx) > 1 && player.grounded;
-    drawForestSpirit(player.runFrame, moving, player.facing);
+    const frame = moving ? player.runFrame : 0;
+    const bob = moving && frame === 1 ? 1 : 0;
+    const x = Math.round(player.x - state.cameraX);
+    const y = Math.round(player.y + bob);
 
-    const screenX = Math.round(player.x - state.cameraX - 2);
-    const screenY = Math.round(player.y - 2);
-    ctx.drawImage(spriteCanvas, screenX, screenY, 32, 32);
+    ctx.save();
+    if (player.facing < 0) {
+      ctx.translate(x + player.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(runnerFrames[frame], 0, y);
+    } else {
+      ctx.drawImage(runnerFrames[frame], x, y);
+    }
+    ctx.restore();
   }
 
   function drawHUD() {
+    fill(8, 8, 74, 15, 'rgba(52,31,23,.82)');
+    fill(111, 8, 99, 15, 'rgba(52,31,23,.68)');
     ctx.font = '8px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#3d2a22';
-    ctx.fillRect(8, 8, 68, 14);
+    ctx.textBaseline = 'top';
     ctx.fillStyle = '#fff0bd';
     const progress = Math.round((player.x / (WORLD_W - player.width)) * 100);
-    ctx.fillText(`TRAVEL ${String(progress).padStart(3, ' ')}%`, 13, 18);
+    ctx.fillText(`TRAVEL ${String(progress).padStart(3, ' ')}%`, 13, 12);
+    const zone = player.x < 320 ? 'MORNING WOODS' : player.x < 640 ? 'SUNLIT MEADOW' : 'TWILIGHT GROVE';
+    ctx.fillText(zone, 118, 12);
   }
 
   function update(dt) {
     let direction = 0;
-
     if (state.pointerHeld) direction = state.pointerDirection;
     if (state.keys.has('ArrowLeft') || state.keys.has('a')) direction = -1;
     if (state.keys.has('ArrowRight') || state.keys.has('d')) direction = 1;
@@ -300,7 +267,6 @@
     player.vy += player.gravity * dt;
     player.x += player.vx * dt;
     player.y += player.vy * dt;
-
     player.x = Math.max(0, Math.min(WORLD_W - player.width, player.x));
 
     const floorY = GROUND_Y - player.height;
@@ -314,7 +280,7 @@
 
     if (Math.abs(player.vx) > 1 && player.grounded) {
       player.frameClock += dt;
-      if (player.frameClock >= 0.12) {
+      if (player.frameClock >= 0.11) {
         player.frameClock = 0;
         player.runFrame = (player.runFrame + 1) % 2;
       }
@@ -323,38 +289,21 @@
       player.runFrame = 0;
     }
 
-    const targetCamera = player.x - VIEW_W * 0.42;
-    const clampedTarget = Math.max(0, Math.min(WORLD_W - VIEW_W, targetCamera));
-    state.cameraX += (clampedTarget - state.cameraX) * Math.min(1, dt * 7);
+    const target = player.x - VIEW_W * 0.38;
+    const clamped = Math.max(0, Math.min(WORLD_W - VIEW_W, target));
+    state.cameraX += (clamped - state.cameraX) * Math.min(1, dt * 7);
   }
 
   function render() {
-    drawSky(state.cameraX);
-    drawClouds(state.cameraX);
-    drawBackHills(state.cameraX);
-    drawMidground(state.cameraX);
-    drawGround(state.cameraX);
+    drawBackground();
     drawPlayer();
     drawHUD();
-    drawZoneLabel(state.cameraX);
-  }
-
-  function loop(timestamp) {
-    if (!state.lastTime) state.lastTime = timestamp;
-    const dt = Math.min(0.032, (timestamp - state.lastTime) / 1000);
-    state.lastTime = timestamp;
-
-    if (state.started) update(dt);
-    render();
-    requestAnimationFrame(loop);
   }
 
   function jump() {
-    if (!state.started) return;
-    if (player.grounded) {
-      player.vy = -player.jumpPower;
-      player.grounded = false;
-    }
+    if (!state.started || !player.grounded) return;
+    player.vy = -player.jumpPower;
+    player.grounded = false;
   }
 
   function canvasPoint(event) {
@@ -375,13 +324,12 @@
     event.preventDefault();
     startGame();
     canvas.setPointerCapture?.(event.pointerId);
-
     const point = canvasPoint(event);
     const now = performance.now();
-    const timeDelta = now - state.lastTapTime;
+    const delta = now - state.lastTapTime;
     const distance = Math.hypot(point.x - state.lastTapX, point.y - state.lastTapY);
 
-    if (timeDelta > 0 && timeDelta < 300 && distance < 56) {
+    if (delta > 0 && delta < 300 && distance < 56) {
       jump();
       state.lastTapTime = 0;
     } else {
@@ -423,14 +371,20 @@
     state.keys.add(event.key);
   });
 
-  window.addEventListener('keyup', (event) => {
-    state.keys.delete(event.key);
-  });
-
+  window.addEventListener('keyup', (event) => state.keys.delete(event.key));
   window.addEventListener('blur', () => {
     state.pointerHeld = false;
     state.keys.clear();
   });
+
+  function loop(timestamp) {
+    if (!state.lastTime) state.lastTime = timestamp;
+    const dt = Math.min(0.032, (timestamp - state.lastTime) / 1000);
+    state.lastTime = timestamp;
+    if (state.started) update(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
 
   render();
   requestAnimationFrame(loop);
